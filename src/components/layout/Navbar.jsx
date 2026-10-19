@@ -158,10 +158,10 @@ export const Navbar = () => {
               Track Status
             </Link>
             <Link
-              to="/dashboard"
-              className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+              to="/citizen/dashboard"
+              className={`nav-link ${isActive('/citizen/dashboard') || isActive('/dashboard') ? 'active' : ''}`}
             >
-              User Portal
+              Citizen Portal
             </Link>
             <Link
               to="/recycling"
@@ -176,10 +176,10 @@ export const Navbar = () => {
               Reports
             </Link>
             <Link
-              to="/admin"
-              className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+              to="/admin/dashboard"
+              className={`nav-link ${isActive('/admin/dashboard') || isActive('/admin') ? 'active' : ''}`}
               style={{
-                color: isActive('/admin') ? '#047857' : '#0f766e',
+                color: isActive('/admin/dashboard') || isActive('/admin') ? '#047857' : '#0f766e',
                 fontWeight: 600
               }}
             >
@@ -528,7 +528,7 @@ export const Navbar = () => {
             <Link to="/track" className={`mobile-nav-link ${isActive('/track') ? 'active' : ''}`}>
               Track Request Status
             </Link>
-            <Link to="/dashboard" className={`mobile-nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
+            <Link to="/citizen/dashboard" className={`mobile-nav-link ${isActive('/citizen/dashboard') || isActive('/dashboard') ? 'active' : ''}`}>
               Citizen Dashboard
             </Link>
             <Link to="/recycling" className={`mobile-nav-link ${isActive('/recycling') ? 'active' : ''}`}>
@@ -537,7 +537,7 @@ export const Navbar = () => {
             <Link to="/reports" className={`mobile-nav-link ${isActive('/reports') ? 'active' : ''}`}>
               Reports & Statistics
             </Link>
-            <Link to="/admin" className={`mobile-nav-link ${isActive('/admin') ? 'active' : ''}`}>
+            <Link to="/admin/dashboard" className={`mobile-nav-link ${isActive('/admin/dashboard') || isActive('/admin') ? 'active' : ''}`}>
               Admin Portal
             </Link>
             <Link to="/notifications" className={`mobile-nav-link ${isActive('/notifications') ? 'active' : ''}`}>
