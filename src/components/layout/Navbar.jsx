@@ -16,7 +16,8 @@ import {
   LogIn,
   CheckCheck,
   ChevronDown,
-  Layers
+  Layers,
+  Truck
 } from 'lucide-react';
 
 export const Navbar = () => {
@@ -25,8 +26,7 @@ export const Navbar = () => {
     notifications,
     markNotificationAsRead,
     markAllNotificationsRead,
-    logout,
-    switchUserRole
+    logout
   } = useEwaste();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -145,69 +145,103 @@ export const Navbar = () => {
             >
               Home
             </Link>
-            <Link
-              to="/schedule-pickup"
-              className={`nav-link ${isActive('/schedule-pickup') ? 'active' : ''}`}
-            >
-              Schedule Pickup
-            </Link>
-            <Link
-              to="/track"
-              className={`nav-link ${isActive('/track') ? 'active' : ''}`}
-            >
-              Track Status
-            </Link>
-            <Link
-              to="/citizen/dashboard"
-              className={`nav-link ${isActive('/citizen/dashboard') || isActive('/dashboard') ? 'active' : ''}`}
-            >
-              Citizen Portal
-            </Link>
-            <Link
-              to="/recycling"
-              className={`nav-link ${isActive('/recycling') ? 'active' : ''}`}
-            >
-              Recycling Hub
-            </Link>
-            <Link
-              to="/reports"
-              className={`nav-link ${isActive('/reports') ? 'active' : ''}`}
-            >
-              Reports
-            </Link>
-            <Link
-              to="/admin/dashboard"
-              className={`nav-link ${isActive('/admin/dashboard') || isActive('/admin') ? 'active' : ''}`}
-              style={{
-                color: isActive('/admin/dashboard') || isActive('/admin') ? '#047857' : '#0f766e',
-                fontWeight: 600
-              }}
-            >
-              <ShieldCheck size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
-              Admin
-            </Link>
+
+            {/* Role-Specific Navigation Links */}
+            {currentUser?.role === 'agent' ? (
+              <>
+                <Link
+                  to="/agent/dashboard"
+                  className={`nav-link ${isActive('/agent/dashboard') || isActive('/agent') ? 'active' : ''}`}
+                  style={{
+                    color: '#0284c7',
+                    fontWeight: 700
+                  }}
+                >
+                  <Truck size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
+                  Agent Orders
+                </Link>
+                <Link
+                  to="/track"
+                  className={`nav-link ${isActive('/track') ? 'active' : ''}`}
+                >
+                  Track Status
+                </Link>
+                <Link
+                  to="/recycling"
+                  className={`nav-link ${isActive('/recycling') ? 'active' : ''}`}
+                >
+                  Recycling Hub
+                </Link>
+              </>
+            ) : currentUser?.role === 'admin' ? (
+              <>
+                <Link
+                  to="/admin/dashboard"
+                  className={`nav-link ${isActive('/admin/dashboard') || isActive('/admin') ? 'active' : ''}`}
+                  style={{
+                    color: '#047857',
+                    fontWeight: 700
+                  }}
+                >
+                  <ShieldCheck size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
+                  Admin Console
+                </Link>
+                <Link
+                  to="/agent/dashboard"
+                  className={`nav-link ${isActive('/agent/dashboard') || isActive('/agent') ? 'active' : ''}`}
+                  style={{
+                    color: '#0284c7',
+                    fontWeight: 600
+                  }}
+                >
+                  <Truck size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} />
+                  Agent Orders
+                </Link>
+                <Link
+                  to="/reports"
+                  className={`nav-link ${isActive('/reports') ? 'active' : ''}`}
+                >
+                  Reports
+                </Link>
+                <Link
+                  to="/recycling"
+                  className={`nav-link ${isActive('/recycling') ? 'active' : ''}`}
+                >
+                  Recycling Hub
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/schedule-pickup"
+                  className={`nav-link ${isActive('/schedule-pickup') ? 'active' : ''}`}
+                >
+                  Schedule Pickup
+                </Link>
+                <Link
+                  to="/track"
+                  className={`nav-link ${isActive('/track') ? 'active' : ''}`}
+                >
+                  Track Status
+                </Link>
+                <Link
+                  to="/citizen/dashboard"
+                  className={`nav-link ${isActive('/citizen/dashboard') || isActive('/dashboard') ? 'active' : ''}`}
+                >
+                  Citizen Portal
+                </Link>
+                <Link
+                  to="/recycling"
+                  className={`nav-link ${isActive('/recycling') ? 'active' : ''}`}
+                >
+                  Recycling Hub
+                </Link>
+              </>
+            )}
           </nav>
 
-          {/* Actions & Profile / Role Toggle */}
+          {/* Actions & Profile */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {/* Quick Demo Switcher */}
-            <button
-              onClick={() => switchUserRole(currentUser?.role === 'admin' ? 'citizen' : 'admin')}
-              className="role-switch-btn"
-              title="Click to toggle between Citizen and Admin mode"
-            >
-              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Demo Role:</span>
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  color: currentUser?.role === 'admin' ? '#047857' : '#0284c7'
-                }}
-              >
-                {currentUser?.role === 'admin' ? 'Admin 🛡️' : 'Citizen 👤'}
-              </span>
-            </button>
-
             {/* Notifications Popover */}
             <div style={{ position: 'relative' }} ref={notifRef}>
               <button
@@ -413,7 +447,7 @@ export const Navbar = () => {
                 }}
               >
                 <Link
-                  to={currentUser.role === 'admin' ? '/admin' : '/dashboard'}
+                  to={currentUser.role === 'admin' ? '/admin/dashboard' : currentUser.role === 'agent' ? '/agent/dashboard' : '/citizen/dashboard'}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -432,7 +466,7 @@ export const Navbar = () => {
                       width: '28px',
                       height: '28px',
                       borderRadius: '50%',
-                      background: currentUser.role === 'admin' ? '#047857' : '#059669',
+                      background: currentUser?.role === 'admin' ? '#047857' : currentUser?.role === 'agent' ? '#0284c7' : '#059669',
                       color: 'white',
                       display: 'flex',
                       alignItems: 'center',
@@ -441,7 +475,7 @@ export const Navbar = () => {
                       fontWeight: 700
                     }}
                   >
-                    {currentUser.name.charAt(0)}
+                    {(currentUser?.name || currentUser?.email || 'U').charAt(0).toUpperCase()}
                   </div>
                   <span
                     style={{
@@ -453,7 +487,7 @@ export const Navbar = () => {
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    {currentUser.name.split(' ')[0]}
+                    {currentUser?.name ? currentUser.name.split(' ')[0] : (currentUser?.email ? currentUser.email.split('@')[0] : 'User')}
                   </span>
                 </Link>
 
@@ -519,36 +553,68 @@ export const Navbar = () => {
             <Link to="/" className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}>
               Home
             </Link>
-            <Link
-              to="/schedule-pickup"
-              className={`mobile-nav-link ${isActive('/schedule-pickup') ? 'active' : ''}`}
-            >
-              Schedule Pickup
-            </Link>
-            <Link to="/track" className={`mobile-nav-link ${isActive('/track') ? 'active' : ''}`}>
-              Track Request Status
-            </Link>
-            <Link to="/citizen/dashboard" className={`mobile-nav-link ${isActive('/citizen/dashboard') || isActive('/dashboard') ? 'active' : ''}`}>
-              Citizen Dashboard
-            </Link>
-            <Link to="/recycling" className={`mobile-nav-link ${isActive('/recycling') ? 'active' : ''}`}>
-              Recycling Hub
-            </Link>
-            <Link to="/reports" className={`mobile-nav-link ${isActive('/reports') ? 'active' : ''}`}>
-              Reports & Statistics
-            </Link>
-            <Link to="/admin/dashboard" className={`mobile-nav-link ${isActive('/admin/dashboard') || isActive('/admin') ? 'active' : ''}`}>
-              Admin Portal
-            </Link>
+
+            {currentUser?.role === 'agent' ? (
+              <>
+                <Link to="/agent/dashboard" className={`mobile-nav-link ${isActive('/agent/dashboard') || isActive('/agent') ? 'active' : ''}`} style={{ color: '#0284c7', fontWeight: 700 }}>
+                  <Truck size={16} style={{ display: 'inline', marginRight: 6 }} />
+                  Agent Orders Portal
+                </Link>
+                <Link to="/track" className={`mobile-nav-link ${isActive('/track') ? 'active' : ''}`}>
+                  Track Status
+                </Link>
+                <Link to="/recycling" className={`mobile-nav-link ${isActive('/recycling') ? 'active' : ''}`}>
+                  Recycling Hub
+                </Link>
+              </>
+            ) : currentUser?.role === 'admin' ? (
+              <>
+                <Link to="/admin/dashboard" className={`mobile-nav-link ${isActive('/admin/dashboard') || isActive('/admin') ? 'active' : ''}`} style={{ color: '#047857', fontWeight: 700 }}>
+                  <ShieldCheck size={16} style={{ display: 'inline', marginRight: 6 }} />
+                  Admin Portal
+                </Link>
+                <Link to="/agent/dashboard" className={`mobile-nav-link ${isActive('/agent/dashboard') || isActive('/agent') ? 'active' : ''}`} style={{ color: '#0284c7', fontWeight: 600 }}>
+                  <Truck size={16} style={{ display: 'inline', marginRight: 6 }} />
+                  Agent Orders
+                </Link>
+                <Link to="/reports" className={`mobile-nav-link ${isActive('/reports') ? 'active' : ''}`}>
+                  Reports & Analytics
+                </Link>
+                <Link to="/recycling" className={`mobile-nav-link ${isActive('/recycling') ? 'active' : ''}`}>
+                  Recycling Hub
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/schedule-pickup"
+                  className={`mobile-nav-link ${isActive('/schedule-pickup') ? 'active' : ''}`}
+                >
+                  Schedule Pickup
+                </Link>
+                <Link to="/track" className={`mobile-nav-link ${isActive('/track') ? 'active' : ''}`}>
+                  Track Request Status
+                </Link>
+                <Link to="/citizen/dashboard" className={`mobile-nav-link ${isActive('/citizen/dashboard') || isActive('/dashboard') ? 'active' : ''}`}>
+                  Citizen Dashboard
+                </Link>
+                <Link to="/recycling" className={`mobile-nav-link ${isActive('/recycling') ? 'active' : ''}`}>
+                  Recycling Hub
+                </Link>
+              </>
+            )}
+
             <Link to="/notifications" className={`mobile-nav-link ${isActive('/notifications') ? 'active' : ''}`}>
               Notifications ({unreadCount})
             </Link>
 
-            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)' }}>
-              <Link to="/schedule-pickup" className="btn btn-primary" style={{ width: '100%' }}>
-                <CalendarPlus size={16} /> Book Doorstep Pickup
-              </Link>
-            </div>
+            {currentUser?.role !== 'agent' && (
+              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)' }}>
+                <Link to="/schedule-pickup" className="btn btn-primary" style={{ width: '100%' }}>
+                  <CalendarPlus size={16} /> Book Doorstep Pickup
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -604,21 +670,6 @@ export const Navbar = () => {
         .mobile-nav-link.active {
           background-color: var(--color-primary-subtle);
           color: var(--color-primary-dark);
-        }
-        .role-switch-btn {
-          display: flex;
-          align-items: center;
-          gap: 0.35rem;
-          background: #f8fafc;
-          border: 1px solid var(--color-border);
-          border-radius: 20px;
-          padding: 0.3rem 0.65rem;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .role-switch-btn:hover {
-          background: var(--color-primary-subtle);
-          border-color: var(--color-primary-light);
         }
       `}</style>
     </header>

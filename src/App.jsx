@@ -15,6 +15,7 @@ import UserDashboard from './pages/UserDashboard';
 import RecyclingManagement from './pages/RecyclingManagement';
 import ReportsDashboard from './pages/ReportsDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AgentDashboard from './pages/AgentDashboard';
 import PickupTracking from './pages/PickupTracking';
 import NotificationsPage from './pages/NotificationsPage';
 
@@ -41,6 +42,28 @@ const AdminRoute = ({ children }) => {
 };
 
 /**
+ * Protected Route for Collection Agent & Admin
+ */
+const AgentRoute = ({ children }) => {
+  const { currentUser, authLoading } = useEwaste();
+
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', gap: '0.75rem' }}>
+        <Loader2 size={28} className="animate-spin" style={{ color: '#0284c7' }} />
+        <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Loading collection agent portal...</span>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/login?tab=agent&error=auth_required" replace />;
+  }
+
+  return children;
+};
+
+/**
  * Protected Route for Citizen only
  */
 const CitizenRoute = ({ children }) => {
@@ -50,7 +73,7 @@ const CitizenRoute = ({ children }) => {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', gap: '0.75rem' }}>
         <Loader2 size={28} className="animate-spin" style={{ color: '#059669' }} />
-        <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Loading citizen portal...</span>
+        <span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Loading portal...</span>
       </div>
     );
   }
@@ -76,6 +99,7 @@ const AppLayout = () => {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/admin/login" element={<Login />} />
+          <Route path="/agent/login" element={<Navigate to="/login?tab=agent" replace />} />
           <Route path="/register" element={<Register />} />
           <Route path="/citizen/register" element={<Register />} />
           <Route path="/track" element={<PickupTracking />} />
@@ -87,6 +111,10 @@ const AppLayout = () => {
           <Route path="/dashboard" element={<Navigate to="/citizen/dashboard" replace />} />
           <Route path="/schedule-pickup" element={<CitizenRoute><RegisterEwaste /></CitizenRoute>} />
           <Route path="/notifications" element={<CitizenRoute><NotificationsPage /></CitizenRoute>} />
+
+          {/* Agent Routes */}
+          <Route path="/agent/dashboard" element={<AgentRoute><AgentDashboard /></AgentRoute>} />
+          <Route path="/agent" element={<Navigate to="/agent/dashboard" replace />} />
 
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

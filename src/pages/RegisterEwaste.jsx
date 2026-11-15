@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useEwaste } from '../context/EwasteContext';
-import { CalendarPlus, Package, MapPin, Clock, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { CalendarPlus, Package, MapPin, Clock, FileText, Loader2, AlertCircle, Phone, Building2 } from 'lucide-react';
 
 const RegisterEwaste = () => {
-  const { currentUser, createRequest, categories } = useEwaste();
+  const { currentUser, createRequest, categories, serviceCenters } = useEwaste();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -16,6 +16,8 @@ const RegisterEwaste = () => {
     address: currentUser?.address || '',
     city: currentUser?.city || 'Bengaluru',
     pincode: currentUser?.pincode || '',
+    contactPhone: currentUser?.phone || '+91 98765 43210',
+    serviceCenterId: serviceCenters[0]?.id || 'sp-ka-1',
     preferredDate: '',
     timeSlot: 'Morning (09:00 AM - 12:00 PM)',
     instructions: ''
@@ -212,6 +214,47 @@ const RegisterEwaste = () => {
                 disabled={isSubmitting}
                 style={inputStyle}
               />
+            </div>
+          </div>
+
+          {/* Contact Phone & Service Center */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={labelStyle}>Your Phone (For Agent to call upon arrival)</label>
+              <div style={{ position: 'relative' }}>
+                <Phone size={18} style={iconStyle} />
+                <input
+                  className="input"
+                  type="tel"
+                  name="contactPhone"
+                  value={form.contactPhone}
+                  onChange={handleChange}
+                  placeholder="+91 98765 43210"
+                  required
+                  disabled={isSubmitting}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>State / Nearest E-Waste Service Hub</label>
+              <div style={{ position: 'relative' }}>
+                <Building2 size={18} style={iconStyle} />
+                <select
+                  className="input"
+                  name="serviceCenterId"
+                  value={form.serviceCenterId}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  style={inputStyle}
+                >
+                  {serviceCenters.map((sc) => (
+                    <option key={sc.id} value={sc.id}>
+                      {sc.name} ({sc.city}, {sc.state})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

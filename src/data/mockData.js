@@ -56,6 +56,24 @@ export const INITIAL_USERS = [
     status: 'Active',
     address: 'EcoCycle Central HQ, Koramangala',
     city: 'Bengaluru'
+  },
+  {
+    id: 'usr-agent-1',
+    name: 'Vikram Patel (Agent)',
+    email: 'agent@ecocycle.com',
+    phone: '+91 98201 55432',
+    role: 'agent',
+    joinedDate: '2026-01-10',
+    totalRequests: 18,
+    totalWeightKg: 142.0,
+    ecoPoints: 850,
+    status: 'Active',
+    vehicleNumber: 'KA-05-EV-4412 (Electric Van)',
+    serviceCenterId: 'sp-ka-1',
+    serviceCenterName: 'EcoCycle Central Hub (Indiranagar, Bengaluru)',
+    address: 'Indiranagar 100ft Road',
+    city: 'Bengaluru',
+    state: 'Karnataka'
   }
 ];
 
@@ -134,6 +152,126 @@ export const RECYCLING_PARTNERS = [
     location: 'Bidadi Industrial Estate',
     capacityTonsPerMonth: 150,
     currentLoad: '45%'
+  }
+];
+
+export const STATE_SERVICE_CENTERS = [
+  {
+    id: 'sp-ka-1',
+    name: 'EcoCycle Central Hub (Indiranagar)',
+    state: 'Karnataka',
+    city: 'Bengaluru',
+    pincodes: ['560038', '560008', '560075', '560001'],
+    address: 'Plot 44, 100 Feet Road, Indiranagar, Bengaluru - 560038',
+    phone: '+91 80 2521 8890',
+    contactPerson: 'Suresh Gowda (Center Manager)',
+    operatingHours: '08:30 AM - 07:00 PM (Mon-Sat)',
+    capacityKg: 15000,
+    activeAgentsCount: 4
+  },
+  {
+    id: 'sp-ka-2',
+    name: 'GreenTech Peenya Industrial Facility',
+    state: 'Karnataka',
+    city: 'Bengaluru',
+    pincodes: ['560058', '560057', '560010', '560022'],
+    address: 'Sector 2, Peenya Industrial Area, Bengaluru - 560058',
+    phone: '+91 80 2839 4411',
+    contactPerson: 'Anand Murthy',
+    operatingHours: '09:00 AM - 06:00 PM (Mon-Sat)',
+    capacityKg: 35000,
+    activeAgentsCount: 6
+  },
+  {
+    id: 'sp-ka-3',
+    name: 'EcoCycle Electronic City Cluster Hub',
+    state: 'Karnataka',
+    city: 'Bengaluru',
+    pincodes: ['560100', '560068', '560102', '560034'],
+    address: 'Cyber Tech Park, Phase 1, Electronic City, Bengaluru - 560100',
+    phone: '+91 80 4110 9922',
+    contactPerson: 'Kavita Nair',
+    operatingHours: '08:00 AM - 08:00 PM (All 7 Days)',
+    capacityKg: 20000,
+    activeAgentsCount: 5
+  },
+  {
+    id: 'sp-mh-1',
+    name: 'EcoCycle Western Mega Facility (Andheri)',
+    state: 'Maharashtra',
+    city: 'Mumbai',
+    pincodes: ['400059', '400069', '400093', '400072'],
+    address: 'MIDC Cross Road 12, Andheri East, Mumbai - 400093',
+    phone: '+91 22 2821 7700',
+    contactPerson: 'Sunil Deshmukh',
+    operatingHours: '09:00 AM - 07:00 PM (Mon-Sat)',
+    capacityKg: 40000,
+    activeAgentsCount: 8
+  },
+  {
+    id: 'sp-mh-2',
+    name: 'Sahyadri CleanTech Hub (Bhosari)',
+    state: 'Maharashtra',
+    city: 'Pune',
+    pincodes: ['411026', '411018', '411019', '411039'],
+    address: 'MIDC Bhosari Industrial Area, Sector 7, Pune - 411026',
+    phone: '+91 20 2712 3344',
+    contactPerson: 'Ganesh Shinde',
+    operatingHours: '08:30 AM - 06:30 PM (Mon-Sat)',
+    capacityKg: 25000,
+    activeAgentsCount: 4
+  },
+  {
+    id: 'sp-dl-1',
+    name: 'Capital Green Recovery Depot (Okhla)',
+    state: 'Delhi NCR',
+    city: 'New Delhi',
+    pincodes: ['110020', '110019', '110025', '110044'],
+    address: 'Okhla Industrial Area Phase-I, New Delhi - 110020',
+    phone: '+91 11 2681 5566',
+    contactPerson: 'Harish Chander',
+    operatingHours: '09:00 AM - 06:30 PM (Mon-Sat)',
+    capacityKg: 30000,
+    activeAgentsCount: 5
+  },
+  {
+    id: 'sp-dl-2',
+    name: 'CyberCity E-Waste Collection Hub (Gurugram)',
+    state: 'Delhi NCR',
+    city: 'Gurugram',
+    pincodes: ['122016', '122002', '122008', '122018'],
+    address: 'DLF Phase 2, Udyog Vihar, Gurugram - 122016',
+    phone: '+91 124 456 7890',
+    contactPerson: 'Ritu Aggarwal',
+    operatingHours: '08:30 AM - 07:30 PM (All 7 Days)',
+    capacityKg: 22000,
+    activeAgentsCount: 4
+  },
+  {
+    id: 'sp-tn-1',
+    name: 'Coromandel Green Recycling Hub (Guindy)',
+    state: 'Tamil Nadu',
+    city: 'Chennai',
+    pincodes: ['600032', '600028', '600085', '600097'],
+    address: 'Thiru-Vi-Ka Industrial Estate, Guindy, Chennai - 600032',
+    phone: '+91 44 2250 1199',
+    contactPerson: 'K. Balakrishnan',
+    operatingHours: '09:00 AM - 06:30 PM (Mon-Sat)',
+    capacityKg: 28000,
+    activeAgentsCount: 6
+  },
+  {
+    id: 'sp-ts-1',
+    name: 'Deccan CyberClean Center (HITEC City)',
+    state: 'Telangana',
+    city: 'Hyderabad',
+    pincodes: ['500081', '500032', '500084', '500033'],
+    address: 'Financial District, Nanakramguda, Hyderabad - 500032',
+    phone: '+91 40 6678 2211',
+    contactPerson: 'Venkat Rao',
+    operatingHours: '08:30 AM - 07:00 PM (All 7 Days)',
+    capacityKg: 26000,
+    activeAgentsCount: 5
   }
 ];
 

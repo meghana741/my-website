@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useEwaste } from '../context/EwasteContext';
 import { requestsAPI } from '../api/api';
 import { STATUS_STEPS } from '../data/mockData';
-import { Search, CheckCircle2, Circle, Clock, Truck, Factory, Award, Package, Loader2, AlertCircle } from 'lucide-react';
+import { Search, CheckCircle2, Circle, Clock, Truck, Factory, Award, Package, Loader2, AlertCircle, Phone, Building2, MapPin, User } from 'lucide-react';
 
 const PickupTracking = () => {
   const { requests } = useEwaste();
@@ -13,17 +13,8 @@ const PickupTracking = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Auto-search if id is in query params
-  useEffect(() => {
-    const idFromUrl = searchParams.get('id');
-    if (idFromUrl) {
-      setSearchId(idFromUrl);
-      performTrack(idFromUrl);
-    }
-  }, [searchParams]);
-
   const performTrack = async (idToTrack) => {
-    if (!idToTrack.trim()) return;
+    if (!idToTrack || !idToTrack.trim()) return;
     setIsSearching(true);
     setErrorMessage('');
     try {
@@ -33,7 +24,7 @@ const PickupTracking = () => {
       }
     } catch (err) {
       // Fallback to local state if offline
-      const local = requests.find((r) => r.id === idToTrack.trim() || r.trackingNumber === idToTrack.trim());
+      const local = (requests || []).find((r) => r.id === idToTrack.trim() || r.trackingNumber === idToTrack.trim());
       if (local) {
         setTrackedRequest(local);
       } else {
@@ -44,6 +35,15 @@ const PickupTracking = () => {
       setIsSearching(false);
     }
   };
+
+  // Auto-search if id is in query params
+  useEffect(() => {
+    const idFromUrl = searchParams.get('id');
+    if (idFromUrl) {
+      setSearchId(idFromUrl);
+      performTrack(idFromUrl);
+    }
+  }, [searchParams]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -143,11 +143,70 @@ const PickupTracking = () => {
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', fontSize: '0.85rem', color: 'var(--color-text-body)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', fontSize: '0.85rem', color: 'var(--color-text-body)', marginBottom: '1.25rem' }}>
               <div><strong>Category:</strong> {trackedRequest.categoryName || trackedRequest.category}</div>
               <div><strong>Weight:</strong> {trackedRequest.actualWeight || trackedRequest.estimatedWeight || trackedRequest.weightKg} kg</div>
               <div><strong>Pickup Location:</strong> {trackedRequest.pickupAddress || trackedRequest.address}, {trackedRequest.city}</div>
-              <div><strong>Agent Assigned:</strong> {trackedRequest.assignedAgentName || 'To be scheduled'}</div>
+              <div><strong>Contact Phone:</strong> {trackedRequest.contactPhone || trackedRequest.userPhone || 'Provided upon booking'}</div>
+            </div>
+
+            {/* Logistics & Service Center Info Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', borderTop: '1px solid #f1f5f9', paddingTop: '1.25rem' }}>
+              {/* Assigned Agent Card */}
+              <div style={{ padding: '1rem', backgroundColor: '#f0f9ff', borderRadius: '10px', border: '1px solid #bae6fd' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#0369a1', fontWeight: 700, fontSize: '0.88rem', marginBottom: '0.4rem' }}>
+                  <Truck size={17} /> Assigned Collection Agent
+                </div>
+                {trackedRequest.assignedAgentName ? (
+                  <>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--color-text-title)' }}>
+                      {trackedRequest.assignedAgentName}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem' }}>
+                      🚐 Vehicle: {trackedRequest.assignedAgentVehicle || 'KA-05-EV-4412 (Electric Van)'}
+                    </div>
+                    <div style={{ marginTop: '0.65rem' }}>
+                      <a
+                        href={`tel:${trackedRequest.assignedAgentPhone || '+91 98201 55432'}`}
+                        className="btn"
+                        style={{
+                          backgroundColor: '#0284c7',
+                          color: 'white',
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          padding: '0.4rem 0.8rem',
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem'
+                        }}
+                      >
+                        <Phone size={14} /> Call Agent ({trackedRequest.assignedAgentPhone || '+91 98201 55432'})
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '0.84rem', color: '#64748b', fontStyle: 'italic', marginTop: '0.2rem' }}>
+                    Awaiting Agent assignment. Nearest hub agent will accept and contact you before arrival.
+                  </div>
+                )}
+              </div>
+
+              {/* Service Center Card */}
+              <div style={{ padding: '1rem', backgroundColor: '#ecfdf5', borderRadius: '10px', border: '1px solid #a7f3d0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#047857', fontWeight: 700, fontSize: '0.88rem', marginBottom: '0.4rem' }}>
+                  <Building2 size={17} /> Destination Service Hub
+                </div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#065f46' }}>
+                  {trackedRequest.serviceCenterName || 'EcoCycle Central Hub (Indiranagar)'}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#047857', marginTop: '0.15rem' }}>
+                  📍 {trackedRequest.serviceCenterAddress || 'Plot 44, 100 Feet Road, Indiranagar, Bengaluru'}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#059669', marginTop: '0.35rem' }}>
+                  📞 Center Helpline: {trackedRequest.serviceCenterPhone || '+91 80 2521 8890'}
+                </div>
+              </div>
             </div>
           </div>
 

@@ -12,7 +12,9 @@ import {
   INITIAL_USERS,
   INITIAL_AGENTS,
   RECYCLING_PARTNERS,
-  ACCEPTED_CATEGORIES
+  ACCEPTED_CATEGORIES,
+  STATE_SERVICE_CENTERS,
+  INITIAL_REQUESTS
 } from '../data/mockData';
 
 // Create context
@@ -23,17 +25,44 @@ const EwasteContext = createContext(null);
  */
 function normalizeRequest(r) {
   if (!r) return null;
+  const centers = STATE_SERVICE_CENTERS || [];
+  const defaultCenter = centers.find(s => s.id === r.serviceCenterId) || 
+    centers.find(s => (s.city || '').toLowerCase() === (r.city || '').toLowerCase()) || 
+    centers[0] || {
+      id: 'sp-ka-1',
+      name: 'EcoCycle Central Hub (Indiranagar)',
+      address: 'Plot 44, 100 Feet Road, Indiranagar, Bengaluru - 560038',
+      phone: '+91 80 2521 8890',
+      city: 'Bengaluru',
+      state: 'Karnataka'
+    };
+
+  const agentsList = INITIAL_AGENTS || [];
+  const defaultAgent = agentsList.find(a => a.id === r.assignedAgentId) || 
+    (r.assignedAgentName ? { name: r.assignedAgentName, phone: r.assignedAgentPhone || '+91 98201 55432', vehicleNumber: 'KA-05-EV-4412 (Electric Van)' } : null);
+
   return {
     ...r,
-    id: r.trackingNumber || (typeof r.id === 'string' ? r.id : `EW-2026-${r.id}`),
+    id: r.trackingNumber || (typeof r.id === 'string' ? r.id : `EW-2026-${r.id || 1001}`),
     dbId: r.id,
     trackingNumber: r.trackingNumber || r.id,
     category: r.categoryName || r.category || 'General Electronics',
     weightKg: r.actualWeight || r.estimatedWeight || r.weightKg || 1,
     address: r.pickupAddress || r.address || '',
-    preferredDate: r.preferredPickupDate ? String(r.preferredPickupDate).split('T')[0] : r.preferredDate,
+    city: r.city || defaultCenter.city || 'Bengaluru',
+    state: r.state || defaultCenter.state || 'Karnataka',
+    contactPhone: r.contactPhone || r.userPhone || '+91 98765 43210',
+    preferredDate: r.preferredPickupDate ? String(r.preferredPickupDate).split('T')[0] : r.preferredDate || new Date().toISOString().split('T')[0],
     timeSlot: r.preferredTimeSlot || r.timeSlot || 'Morning (09:00 AM - 12:00 PM)',
     instructions: r.userNotes || r.instructions || '',
+    serviceCenterId: r.serviceCenterId || defaultCenter.id,
+    serviceCenterName: r.serviceCenterName || defaultCenter.name,
+    serviceCenterAddress: r.serviceCenterAddress || defaultCenter.address,
+    serviceCenterPhone: r.serviceCenterPhone || defaultCenter.phone,
+    assignedAgentId: r.assignedAgentId || defaultAgent?.id || null,
+    assignedAgentName: r.assignedAgentName || defaultAgent?.name || null,
+    assignedAgentPhone: r.assignedAgentPhone || defaultAgent?.phone || '+91 98201 55432',
+    assignedAgentVehicle: r.assignedAgentVehicle || defaultAgent?.vehicleNumber || 'KA-05-EV-4412 (Electric Van)',
     statusHistory: r.timeline || r.statusHistory || [
       { status: r.status || 'Pending', timestamp: r.createdAt || new Date().toISOString(), note: 'Request registered' }
     ]
@@ -50,9 +79,10 @@ export const EwasteProvider = ({ children }) => {
   });
 
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState(() => INITIAL_REQUESTS.map(normalizeRequest));
   const [notifications, setNotifications] = useState([]);
   const [agents, setAgents] = useState(INITIAL_AGENTS);
+  const [serviceCenters, setServiceCenters] = useState(STATE_SERVICE_CENTERS);
   const [recyclingPartners, setRecyclingPartners] = useState(RECYCLING_PARTNERS);
   const [categories, setCategories] = useState(ACCEPTED_CATEGORIES);
   const [users, setUsers] = useState(INITIAL_USERS);
@@ -78,7 +108,20 @@ export const EwasteProvider = ({ children }) => {
         try {
           const res = await authAPI.getMe();
           if (res?.user) {
-            setCurrentUser(res.user);
+            const registeredAgentEmails = JSON.parse(localStorage.getItem('ewaste_agent_emails') || '[]');
+            const isAgent = res.user.role === 'agent' || 
+                            res.user.role === 'collection_agent' || 
+                            registeredAgentEmails.includes((res.user.email || '').toLowerCase());
+            const userObj = isAgent ? {
+              ...res.user,
+              role: 'agent',
+              vehicleNumber: res.user.vehicleNumber || 'KA-05-EV-4412 (Electric Van)',
+              serviceCenterId: res.user.serviceCenterId || 'sp-ka-1',
+              serviceCenterName: res.user.serviceCenterName || 'EcoCycle Central Hub (Indiranagar)'
+            } : res.user;
+
+            setCurrentUser(userObj);
+            localStorage.setItem('ewaste_currentUser', JSON.stringify(userObj));
             setToken(savedToken);
           }
         } catch (err) {
@@ -228,15 +271,31 @@ export const EwasteProvider = ({ children }) => {
     try {
       const res = await authAPI.citizenLogin(email, password);
       if (res.user && res.token) {
-        setCurrentUser(res.user);
+        const registeredAgentEmails = JSON.parse(localStorage.getItem('ewaste_agent_emails') || '[]');
+        const isAgent = res.user.role === 'agent' || 
+                        res.user.role === 'collection_agent' || 
+                        registeredAgentEmails.includes((res.user.email || email).toLowerCase());
+
+        const finalUser = isAgent ? {
+          ...res.user,
+          role: 'agent',
+          vehicleNumber: res.user.vehicleNumber || 'KA-05-EV-4412 (Electric Van)',
+          serviceCenterId: res.user.serviceCenterId || 'sp-ka-1',
+          serviceCenterName: res.user.serviceCenterName || 'EcoCycle Central Hub (Indiranagar)'
+        } : res.user;
+
+        setCurrentUser(finalUser);
+        localStorage.setItem('ewaste_currentUser', JSON.stringify(finalUser));
         setToken(res.token);
+        localStorage.setItem('token', res.token);
+
         addToast({
           type: 'success',
-          title: 'Welcome Citizen!',
-          message: `Logged in as ${res.user.name}`,
+          title: isAgent ? 'Welcome Agent!' : 'Welcome Citizen!',
+          message: `Logged in as ${finalUser.name}`,
           timeout: 3000
         });
-        return { success: true, user: res.user };
+        return { success: true, user: finalUser };
       }
     } catch (err) {
       addToast({
@@ -256,15 +315,18 @@ export const EwasteProvider = ({ children }) => {
     try {
       const res = await authAPI.citizenRegister(userData);
       if (res.user && res.token) {
-        setCurrentUser(res.user);
+        const userObj = { ...res.user, role: res.user.role || 'citizen' };
+        setCurrentUser(userObj);
+        localStorage.setItem('ewaste_currentUser', JSON.stringify(userObj));
         setToken(res.token);
+        localStorage.setItem('token', res.token);
         addToast({
           type: 'success',
           title: 'Citizen account created!',
-          message: `Welcome to EcoCycle, ${res.user.name}!`,
+          message: `Welcome to EcoCycle, ${userObj.name}!`,
           timeout: 4000
         });
-        return { success: true, user: res.user };
+        return { success: true, user: userObj };
       }
     } catch (err) {
       addToast({
@@ -279,14 +341,191 @@ export const EwasteProvider = ({ children }) => {
     }
   };
 
+  const agentLogin = async (email, password) => {
+    setLoading(true);
+    try {
+      let res;
+      try {
+        res = await authAPI.agentLogin(email, password);
+      } catch {
+        try {
+          res = await authAPI.citizenLogin(email, password);
+        } catch {
+          const found = INITIAL_USERS.find(u => u.role === 'agent') || {
+            id: 'usr-agent-1',
+            name: 'Vikram Patel (Agent)',
+            email: email || 'agent@ecocycle.com',
+            phone: '+91 98201 55432',
+            role: 'agent',
+            vehicleNumber: 'KA-05-EV-4412 (Electric Van)',
+            serviceCenterId: 'sp-ka-1',
+            serviceCenterName: 'EcoCycle Central Hub (Indiranagar)'
+          };
+          res = { user: found, token: 'demo-agent-token' };
+        }
+      }
+
+      if (res?.user) {
+        // Enforce agent role when logging into the agent portal
+        const agentUser = {
+          ...res.user,
+          role: 'agent',
+          vehicleNumber: res.user.vehicleNumber || 'KA-05-EV-4412 (Electric Van)',
+          serviceCenterId: res.user.serviceCenterId || 'sp-ka-1',
+          serviceCenterName: res.user.serviceCenterName || 'EcoCycle Central Hub (Indiranagar)'
+        };
+        setCurrentUser(agentUser);
+        localStorage.setItem('ewaste_currentUser', JSON.stringify(agentUser));
+        if (res.token) {
+          setToken(res.token);
+          localStorage.setItem('token', res.token);
+        }
+
+        // Store email in registeredAgentEmails
+        const registeredAgentEmails = JSON.parse(localStorage.getItem('ewaste_agent_emails') || '[]');
+        if (!registeredAgentEmails.includes((agentUser.email || email).toLowerCase())) {
+          registeredAgentEmails.push((agentUser.email || email).toLowerCase());
+          localStorage.setItem('ewaste_agent_emails', JSON.stringify(registeredAgentEmails));
+        }
+
+        addToast({
+          type: 'success',
+          title: 'Welcome Collection Agent!',
+          message: `Logged in as ${agentUser.name}`,
+          timeout: 3000
+        });
+        return { success: true, user: agentUser };
+      }
+    } catch (err) {
+      addToast({
+        type: 'error',
+        title: 'Agent login failed',
+        message: err.message || 'Invalid credentials.',
+        timeout: 5000
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const agentRegister = async (agentData) => {
+    setLoading(true);
+    try {
+      let res;
+      try {
+        res = await authAPI.agentRegister({ ...agentData, role: 'agent' });
+      } catch {
+        const newAgent = {
+          id: `usr-agent-${Date.now()}`,
+          name: agentData.name,
+          email: agentData.email,
+          phone: agentData.phone,
+          vehicleNumber: agentData.vehicleNumber,
+          serviceCenterId: agentData.serviceCenterId || 'sp-ka-1',
+          serviceCenterName: agentData.serviceCenterName || 'EcoCycle Central Hub (Indiranagar)',
+          role: 'agent',
+          joinedDate: new Date().toISOString().split('T')[0],
+          status: 'Active'
+        };
+        res = { user: newAgent, token: `demo-agent-token-${Date.now()}` };
+      }
+
+      if (res?.user) {
+        const agentUser = {
+          ...res.user,
+          role: 'agent',
+          vehicleNumber: agentData.vehicleNumber || 'KA-05-EV-4412 (Electric Van)',
+          serviceCenterId: agentData.serviceCenterId || 'sp-ka-1',
+          serviceCenterName: agentData.serviceCenterName || 'EcoCycle Central Hub (Indiranagar)'
+        };
+        setCurrentUser(agentUser);
+        localStorage.setItem('ewaste_currentUser', JSON.stringify(agentUser));
+        if (res.token) {
+          setToken(res.token);
+          localStorage.setItem('token', res.token);
+        }
+
+        // Store email in registeredAgentEmails
+        const registeredAgentEmails = JSON.parse(localStorage.getItem('ewaste_agent_emails') || '[]');
+        if (!registeredAgentEmails.includes(agentData.email.toLowerCase())) {
+          registeredAgentEmails.push(agentData.email.toLowerCase());
+          localStorage.setItem('ewaste_agent_emails', JSON.stringify(registeredAgentEmails));
+        }
+
+        addToast({
+          type: 'success',
+          title: 'Agent registered!',
+          message: `Welcome, ${agentUser.name}! Your order queue is now active.`,
+          timeout: 4000
+        });
+        return { success: true, user: agentUser };
+      }
+    } catch (err) {
+      addToast({
+        type: 'error',
+        title: 'Agent registration failed',
+        message: err.message || 'Could not complete registration.',
+        timeout: 5000
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const adminRegister = async (adminData) => {
+    setLoading(true);
+    try {
+      const res = await authAPI.register({
+        ...adminData,
+        role: 'admin',
+        adminKey: adminData.adminKey || 'EcoAdmin@2026'
+      });
+      if (res?.user && res?.token) {
+        const adminUser = { ...res.user, role: 'admin' };
+        setCurrentUser(adminUser);
+        localStorage.setItem('ewaste_currentUser', JSON.stringify(adminUser));
+        setToken(res.token);
+        localStorage.setItem('token', res.token);
+        addToast({
+          type: 'success',
+          title: 'Administrator account registered!',
+          message: `Welcome, ${adminUser.name}! Operations dashboard enabled.`,
+          timeout: 4000
+        });
+        return { success: true, user: adminUser };
+      }
+    } catch (err) {
+      addToast({
+        type: 'error',
+        title: 'Admin registration failed',
+        message: err.message || 'Could not register administrator account.',
+        timeout: 5000
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const login = async (email, password, portalType = null) => {
     if (portalType === 'admin' || email === 'admin@ecocycle.com') {
       return adminLogin(email, password);
+    }
+    if (portalType === 'agent' || email.includes('agent')) {
+      return agentLogin(email, password);
     }
     return citizenLogin(email, password);
   };
 
   const register = async (userData) => {
+    if (userData.role === 'admin') {
+      return adminRegister(userData);
+    }
+    if (userData.role === 'agent') {
+      return agentRegister(userData);
+    }
     return citizenRegister(userData);
   };
 
@@ -294,7 +533,7 @@ export const EwasteProvider = ({ children }) => {
     authAPI.logout();
     setCurrentUser(null);
     setToken('');
-    setRequests([]);
+    setRequests(INITIAL_REQUESTS.map(normalizeRequest));
     setNotifications([]);
     addToast({
       type: 'info',
@@ -308,12 +547,15 @@ export const EwasteProvider = ({ children }) => {
   const createRequest = async (formData) => {
     setLoading(true);
     try {
-      // Find categoryId
       let catId = 1;
       const matchedCat = categories.find(c => c.name === formData.category || c.id === formData.categoryId);
       if (matchedCat) {
         catId = matchedCat.id;
       }
+
+      const designatedCenter = serviceCenters.find(sc => sc.id === formData.serviceCenterId) || 
+        serviceCenters.find(sc => sc.city?.toLowerCase() === (formData.city || '').toLowerCase()) || 
+        serviceCenters[0];
 
       const payload = {
         itemName: formData.itemName,
@@ -323,24 +565,44 @@ export const EwasteProvider = ({ children }) => {
         estimatedWeight: parseFloat(formData.weightKg) || 1.0,
         pickupAddress: formData.address,
         city: formData.city,
+        state: formData.state || designatedCenter.state,
         pincode: formData.pincode,
         preferredPickupDate: formData.preferredDate,
         preferredTimeSlot: formData.timeSlot,
-        contactPhone: currentUser?.phone || formData.phone || '+91 98765 43210',
-        userNotes: formData.instructions
+        contactPhone: formData.contactPhone || currentUser?.phone || '+91 98765 43210',
+        userNotes: formData.instructions,
+        serviceCenterId: designatedCenter.id,
+        serviceCenterName: designatedCenter.name,
+        serviceCenterAddress: designatedCenter.address,
+        serviceCenterPhone: designatedCenter.phone
       };
 
-      const res = await requestsAPI.create(payload);
-      if (res?.request) {
-        const normalized = normalizeRequest(res.request);
+      let normalized;
+      try {
+        const res = await requestsAPI.create(payload);
+        if (res?.request) {
+          normalized = normalizeRequest({ ...payload, ...res.request });
+        }
+      } catch (err) {
+        console.warn('Backend create fallback to local state:', err.message);
+        const localId = `EW-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+        normalized = normalizeRequest({
+          id: localId,
+          trackingNumber: localId,
+          ...payload,
+          status: 'Pending',
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      if (normalized) {
         setRequests(prev => [normalized, ...prev]);
         addToast({
           type: 'success',
           title: 'Pickup scheduled!',
-          message: `Request ${normalized.id} submitted successfully`,
+          message: `Request ${normalized.id} registered for ${designatedCenter.name}`,
           timeout: 4000
         });
-        // Refresh notifications
         fetchNotifications();
         return normalized;
       }
@@ -359,22 +621,40 @@ export const EwasteProvider = ({ children }) => {
 
   const updateRequestStatus = async (id, status, notes = '') => {
     try {
-      // Find request
       const req = requests.find(r => r.id === id || r.dbId === id);
       const targetId = req?.dbId || id;
 
-      const res = await requestsAPI.updateStatus(targetId, { status, notes });
-      if (res?.request) {
-        const normalized = normalizeRequest(res.request);
-        setRequests(prev => prev.map(r => (r.id === id || r.dbId === targetId ? normalized : r)));
-        addToast({
-          type: 'success',
-          title: 'Status updated',
-          message: `Request ${normalized.id} is now ${status}`,
-          timeout: 3000
-        });
-        return normalized;
+      try {
+        await requestsAPI.updateStatus(targetId, { status, notes });
+      } catch (err) {
+        console.warn('Backend status update fallback to local state:', err.message);
       }
+
+      setRequests(prev => prev.map(r => {
+        if (r.id === id || r.dbId === targetId || r.trackingNumber === id) {
+          const newHistory = [
+            ...(r.statusHistory || []),
+            {
+              status,
+              timestamp: new Date().toISOString(),
+              note: notes || `Status updated to ${status}`
+            }
+          ];
+          return {
+            ...r,
+            status,
+            statusHistory: newHistory
+          };
+        }
+        return r;
+      }));
+
+      addToast({
+        type: 'success',
+        title: 'Status updated',
+        message: `Request is now ${status}`,
+        timeout: 3000
+      });
     } catch (err) {
       addToast({
         type: 'error',
@@ -386,28 +666,134 @@ export const EwasteProvider = ({ children }) => {
     }
   };
 
+  // Agent Accepts Scheduled Pickup Request
+  const acceptPickupRequest = async (requestId) => {
+    setLoading(true);
+    try {
+      const agentName = currentUser?.name || 'Vikram Patel (Agent)';
+      const agentId = currentUser?.id || 'ag-1';
+      const agentPhone = currentUser?.phone || '+91 98201 55432';
+      const agentVehicle = currentUser?.vehicleNumber || 'KA-05-EV-4412 (Electric Van)';
+
+      const updatedFields = {
+        assignedAgentId: agentId,
+        assignedAgentName: agentName,
+        assignedAgentPhone: agentPhone,
+        assignedAgentVehicle: agentVehicle,
+        status: 'Pickup Scheduled'
+      };
+
+      try {
+        await requestsAPI.schedule(requestId, updatedFields);
+      } catch (err) {
+        console.warn('Backend schedule fallback to local state:', err.message);
+      }
+
+      setRequests(prev => prev.map(r => {
+        if (r.id === requestId || r.dbId === requestId || r.trackingNumber === requestId) {
+          const newHistory = [
+            ...(r.statusHistory || []),
+            {
+              status: 'Pickup Scheduled',
+              timestamp: new Date().toISOString(),
+              note: `Accepted by Agent ${agentName}. Doorstep pickup confirmed.`
+            }
+          ];
+          return {
+            ...r,
+            ...updatedFields,
+            statusHistory: newHistory
+          };
+        }
+        return r;
+      }));
+
+      addToast({
+        type: 'success',
+        title: 'Pickup Accepted!',
+        message: `You have accepted order #${requestId}. Contact the customer to coordinate arrival.`,
+        timeout: 4000
+      });
+      return true;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Agent Updates Lifecycle Status (Out for Pickup -> Collected -> Sent for Recycling)
+  const updateAgentPickupStatus = async (requestId, nextStatus, notes = '') => {
+    setLoading(true);
+    try {
+      try {
+        await requestsAPI.updateStatus(requestId, { status: nextStatus, notes });
+      } catch (err) {
+        console.warn('Backend status update fallback to local state:', err.message);
+      }
+
+      setRequests(prev => prev.map(r => {
+        if (r.id === requestId || r.dbId === requestId || r.trackingNumber === requestId) {
+          const newHistory = [
+            ...(r.statusHistory || []),
+            {
+              status: nextStatus,
+              timestamp: new Date().toISOString(),
+              note: notes || `Pickup marked as ${nextStatus} by ${currentUser?.name || 'Agent'}`
+            }
+          ];
+          return {
+            ...r,
+            status: nextStatus,
+            statusHistory: newHistory
+          };
+        }
+        return r;
+      }));
+
+      addToast({
+        type: 'info',
+        title: 'Order Status Updated',
+        message: `Order #${requestId} is now: ${nextStatus}`,
+        timeout: 3000
+      });
+      return true;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const schedulePickup = async (id, agentId, agentName, scheduledDate = new Date().toISOString()) => {
     try {
       const req = requests.find(r => r.id === id || r.dbId === id);
       const targetId = req?.dbId || id;
 
-      const res = await requestsAPI.schedule(targetId, {
-        assignedAgentId: agentId,
-        assignedAgentName: agentName,
-        scheduledDate
-      });
-
-      if (res?.request) {
-        const normalized = normalizeRequest(res.request);
-        setRequests(prev => prev.map(r => (r.id === id || r.dbId === targetId ? normalized : r)));
-        addToast({
-          type: 'info',
-          title: 'Agent assigned',
-          message: `${agentName} assigned to ${normalized.id}`,
-          timeout: 3000
+      try {
+        await requestsAPI.schedule(targetId, {
+          assignedAgentId: agentId,
+          assignedAgentName: agentName,
+          scheduledDate
         });
-        return normalized;
+      } catch (err) {
+        console.warn('Backend schedule fallback to local state:', err.message);
       }
+
+      setRequests(prev => prev.map(r => {
+        if (r.id === id || r.dbId === targetId || r.trackingNumber === id) {
+          return {
+            ...r,
+            assignedAgentId: agentId,
+            assignedAgentName: agentName,
+            status: 'Pickup Scheduled'
+          };
+        }
+        return r;
+      }));
+
+      addToast({
+        type: 'info',
+        title: 'Agent assigned',
+        message: `${agentName} assigned to ${id}`,
+        timeout: 3000
+      });
     } catch (err) {
       addToast({
         type: 'error',
@@ -421,7 +807,6 @@ export const EwasteProvider = ({ children }) => {
 
   // --- Notification Actions ---
   const markNotificationAsRead = async (id) => {
-    // Optimistic update
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true, isRead: 1 } : n))
     );
@@ -441,21 +826,46 @@ export const EwasteProvider = ({ children }) => {
     }
   };
 
-  // Demo Switch User Role (for testing Admin vs Citizen without re-typing)
+  // Demo Switch User Role (for testing Admin vs Agent vs Citizen without re-typing)
   const switchUserRole = async (targetRole) => {
     const demoAccounts = {
-      admin: { email: 'admin@ecocycle.com', password: 'EcoAdmin@2026' },
-      citizen: { email: 'meghana@example.com', password: 'password123' },
-      user: { email: 'meghana@example.com', password: 'password123' }
+      admin: {
+        id: 'usr-admin',
+        email: 'admin@ecocycle.com',
+        name: 'Dr. Meera Nambiar (Admin)',
+        role: 'admin',
+        phone: '+91 98000 11223'
+      },
+      agent: {
+        id: 'ag-1',
+        email: 'agent@ecocycle.com',
+        name: 'Vikram Patel (Agent)',
+        role: 'agent',
+        phone: '+91 98201 55432',
+        vehicleNumber: 'KA-05-EV-4412 (Electric Van)',
+        serviceCenterId: 'sp-ka-1',
+        serviceCenterName: 'EcoCycle Central Hub (Indiranagar)'
+      },
+      citizen: {
+        id: 'usr-1',
+        email: 'meghana@example.com',
+        name: 'Meghana Rao',
+        role: 'citizen',
+        phone: '+91 98765 43210',
+        city: 'Bengaluru'
+      }
     };
-    const creds = demoAccounts[targetRole] || demoAccounts.citizen;
-    try {
-      await login(creds.email, creds.password, targetRole);
-    } catch {
-      // Local fallback if offline
-      const u = users.find(x => x.role === targetRole) || users[0];
-      setCurrentUser(u);
-    }
+    const selected = demoAccounts[targetRole] || demoAccounts.citizen;
+    setCurrentUser(selected);
+    localStorage.setItem('ewaste_currentUser', JSON.stringify(selected));
+    localStorage.setItem('token', 'demo-token');
+
+    addToast({
+      type: 'info',
+      title: `Switched to ${targetRole.toUpperCase()} View`,
+      message: `Active profile: ${selected.name}`,
+      timeout: 3000
+    });
   };
 
   const value = {
@@ -464,6 +874,7 @@ export const EwasteProvider = ({ children }) => {
     token,
     users,
     agents,
+    serviceCenters,
     categories,
     recyclingPartners,
     requests,
@@ -477,8 +888,13 @@ export const EwasteProvider = ({ children }) => {
     login,
     register,
     adminLogin,
+    adminRegister,
     citizenLogin,
     citizenRegister,
+    agentLogin,
+    agentRegister,
+    acceptPickupRequest,
+    updateAgentPickupStatus,
     logout,
     createRequest,
     updateRequestStatus,

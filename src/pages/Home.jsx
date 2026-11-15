@@ -41,7 +41,7 @@ const Home = () => {
   const citizenCount = useCounter(14800, 1800, statsStarted);
   const kgCount = useCounter(Math.round(totalCollectedKg / 100), 2000, statsStarted);
   const co2Count = useCounter(Math.round(totalCO2 / 1000), 2000, statsStarted);
-  const requestsCount = useCounter(requests.length + 1036, 1500, statsStarted);
+  const requestsCount = useCounter((requests?.length || 0) + 1036, 1500, statsStarted);
 
   useEffect(() => {
     const timer = setTimeout(() => setStatsStarted(true), 400);
