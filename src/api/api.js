@@ -122,13 +122,13 @@ export const authAPI = {
   },
 
   login: async (email, password, portalType = null) => {
-    const endpoint = portalType === 'admin' 
-      ? '/auth/admin/login' 
-      : portalType === 'agent' 
-      ? '/auth/agent/login' 
-      : portalType === 'citizen' 
-      ? '/auth/citizen/login' 
-      : '/auth/login';
+    const endpoint = portalType === 'admin'
+      ? '/auth/admin/login'
+      : portalType === 'agent'
+        ? '/auth/agent/login'
+        : portalType === 'citizen'
+          ? '/auth/citizen/login'
+          : '/auth/login';
     const res = await apiRequest(endpoint, {
       method: 'POST',
       body: { email, password, portalType }
@@ -141,11 +141,11 @@ export const authAPI = {
   },
 
   register: async (userData) => {
-    const endpoint = userData.role === 'agent' 
-      ? '/auth/agent/register' 
-      : userData.role === 'admin' 
-      ? '/auth/register' 
-      : '/auth/citizen/register';
+    const endpoint = userData.role === 'agent'
+      ? '/auth/agent/register'
+      : userData.role === 'admin'
+        ? '/auth/register'
+        : '/auth/citizen/register';
     const res = await apiRequest(endpoint, {
       method: 'POST',
       body: userData
@@ -230,7 +230,7 @@ export const requestsAPI = {
   }
 };
 
-// 3. Recycling APIs
+// 3. Recycling APIs.
 export const recyclingAPI = {
   getBatches: async (filters = {}) => {
     const params = new URLSearchParams();
