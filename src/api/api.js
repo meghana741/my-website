@@ -10,7 +10,6 @@ const configuredURL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:50
 const API_BASE_URL = configuredURL.replace(/\/+$/, '').endsWith('/api')
   ? configuredURL.replace(/\/+$/, '')
   : `${configuredURL.replace(/\/+$/, '')}/api`;
-
 /**
  * Universal fetch wrapper with authorization and error normalization
  */
