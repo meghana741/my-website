@@ -3,7 +3,13 @@
  * Connects frontend to Node.js + Express + SQL Server backend
  */
 
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+//const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+const configuredURL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000';
+
+const API_BASE_URL = configuredURL.replace(/\/+$/, '').endsWith('/api')
+  ? configuredURL.replace(/\/+$/, '')
+  : `${configuredURL.replace(/\/+$/, '')}/api`;
 
 /**
  * Universal fetch wrapper with authorization and error normalization
